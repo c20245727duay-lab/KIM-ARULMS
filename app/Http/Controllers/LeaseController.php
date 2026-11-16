@@ -2,25 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Lease;
-use App\Models\ApartmentUnit;
 use App\Http\Requests\StoreLeaseRequest;
 use App\Http\Requests\UpdateLeaseRequest;
+use App\Models\ApartmentUnit;
+use App\Models\Lease;
+use App\Models\Tenant;
 use App\Services\ApartmentRentalService;
 
 class LeaseController extends Controller
 {
-    public function __construct(
-        private ApartmentRentalService $service
-    ) {}
+    protected ApartmentRentalService $service;
+
+    public function __construct(ApartmentRentalService $service)
+    {
+        $this->service = $service;
+    }
 
     public function index()
     {
         $leases = Lease::with([
             'tenant',
             'apartmentUnit.building',
-            'utilityBill',
-        ])->latest()->paginate(10);
+            'utilityBills',
+        ])
+            ->latest()
+            ->paginate(10);
 
         return response()->json($leases);
     }
@@ -28,18 +34,16 @@ class LeaseController extends Controller
     public function create()
     {
         return response()->json([
+            'tenants' => Tenant::all(),
             'vacant_units' => ApartmentUnit::with('building')
                 ->where('status', 'Vacant')
                 ->get(),
-            'payment_statuses' => ['Unpaid', 'Paid', 'Partial'],
         ]);
     }
 
     public function store(StoreLeaseRequest $request)
     {
-        $lease = $this->service->createLease(
-            $request->validated()
-        );
+        $lease = $this->service->createLease($request->validated());
 
         return response()->json([
             'message' => 'Lease created successfully.',
@@ -47,14 +51,9 @@ class LeaseController extends Controller
         ], 201);
     }
 
-    public function update(
-        UpdateLeaseRequest $request,
-        string $id
-    ) {
-        $lease = $this->service->updateLease(
-            $request->validated(),
-            (int) $id
-        );
+    public function update(UpdateLeaseRequest $request, $id)
+    {
+        $lease = $this->service->updateLease((int) $id, $request->validated());
 
         return response()->json([
             'message' => 'Lease updated successfully.',

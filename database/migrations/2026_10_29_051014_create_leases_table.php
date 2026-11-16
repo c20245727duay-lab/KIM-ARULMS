@@ -8,25 +8,28 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('leases')) {
+            return;
+        }
+
         Schema::create('leases', function (Blueprint $table) {
-            $table->id();
+            $table->id('lease_id');
 
             $table->foreignId('tenant_id')
-                ->constrained()
+                ->constrained('tenants', 'tenant_id')
                 ->onDelete('restrict');
 
             $table->foreignId('apartment_unit_id')
-                ->constrained()
+                ->constrained('apartment_units', 'apartment_unit_id')
                 ->onDelete('restrict');
 
+            $table->decimal('monthly_rent', 10, 2);
             $table->decimal('security_deposit', 10, 2);
             $table->date('lease_start');
             $table->date('lease_end');
-            $table->string('payment_status')->default('Unpaid');
             $table->timestamps();
 
             $table->index(['tenant_id', 'apartment_unit_id']);
-            $table->index('lease_start');
         });
     }
 

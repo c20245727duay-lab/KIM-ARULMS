@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -8,9 +9,11 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('apartment-units', fn () => Inertia::render('apartment-units'))
+        ->name('apartment-units.index');
+    Route::get('leases', fn () => Inertia::render('leases'))
+        ->name('leases.index');
 });
 
 require __DIR__.'/settings.php';

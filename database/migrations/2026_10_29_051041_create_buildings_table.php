@@ -8,8 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('buildings')) {
+            return;
+        }
+
         Schema::create('buildings', function (Blueprint $table) {
-            $table->id();
+            $table->id('building_id');
             $table->string('building_block')->unique();
             $table->timestamps();
         });

@@ -8,16 +8,24 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('apartment_units')) {
+            return;
+        }
+
         Schema::create('apartment_units', function (Blueprint $table) {
-            $table->id();
+            $table->id('apartment_unit_id');
 
             $table->foreignId('building_id')
-                ->constrained()
+                ->constrained('buildings', 'building_id')
                 ->onDelete('restrict');
 
             $table->string('unit_number');
             $table->decimal('monthly_rent', 10, 2);
-            $table->string('status')->default('Vacant');
+            $table->enum('status', [
+                'Vacant',
+                'Occupied',
+                'Maintenance'
+            ])->default('Vacant');
             $table->timestamps();
 
             $table->unique(['building_id', 'unit_number']);

@@ -7,10 +7,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Building extends Model
 {
-    protected $fillable = ['building_block'];
+    protected $primaryKey = 'building_id';
+
+    protected $fillable = [
+        'building_block',
+    ];
 
     public function apartmentUnits(): HasMany
     {
-        return $this->hasMany(ApartmentUnit::class);
+        return $this->hasMany(
+            ApartmentUnit::class,
+            'building_id',
+            'building_id'
+        );
     }
 }
