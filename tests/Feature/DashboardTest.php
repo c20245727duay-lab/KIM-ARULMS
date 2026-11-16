@@ -132,6 +132,7 @@ class DashboardTest extends TestCase
             'building_id' => $building->building_id,
             'unit_name' => 'North View',
             'unit_number' => '101',
+            'monthly_rent' => 1200,
             'status' => 'Vacant',
         ]);
 
@@ -153,6 +154,7 @@ class DashboardTest extends TestCase
             'building_id' => $building->building_id,
             'unit_name' => 'North View',
             'unit_number' => '101',
+            'monthly_rent' => 1200,
             'status' => 'Vacant',
         ]);
 
