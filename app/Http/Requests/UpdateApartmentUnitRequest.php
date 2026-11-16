@@ -22,12 +22,22 @@ class UpdateApartmentUnitRequest extends FormRequest
             ? $routeUnit->getKey()
             : ($routeUnit ?? $this->route('id'));
 
-        // Get the current building ID if not provided
+        // Get the current building ID
         $buildingId = $this->input('building_id');
 
-        if ($buildingId === null && $unitId !== null) {
+        if (empty($buildingId) && $unitId !== null) {
             $buildingId = ApartmentUnit::whereKey($unitId)
                 ->value('building_id');
+        }
+
+        // Check if unit number already exists in the building
+        $unitNumberRule = Rule::unique('apartment_units', 'unit_number')
+            ->ignore($unitId, 'apartment_unit_id');
+
+        if (!empty($buildingId)) {
+            $unitNumberRule->where(
+                fn ($query) => $query->where('building_id', $buildingId)
+            );
         }
 
         return [
@@ -50,12 +60,7 @@ class UpdateApartmentUnitRequest extends FormRequest
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('apartment_units', 'unit_number')
-                    ->where(fn ($query) => $query->where(
-                        'building_id',
-                        $buildingId
-                    ))
-                    ->ignore($unitId, 'apartment_unit_id'),
+                $unitNumberRule,
             ],
 
             'monthly_rent' => [
