@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ApartmentUnit;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateApartmentUnitRequest extends FormRequest
 {
@@ -13,30 +15,27 @@ class UpdateApartmentUnitRequest extends FormRequest
 
     public function rules(): array
     {
+        $unitId = $this->route('id') ?? $this->route('apartment_unit');
+        $buildingId = $this->input('building_id');
+
+        if ($buildingId === null && $unitId !== null) {
+            $buildingId = ApartmentUnit::whereKey($unitId)->value('building_id');
+        }
+
         return [
-            'building_id' => [
-                'sometimes',
-                'required',
-                'integer',
-                'exists:buildings,building_id',
-            ],
+            'building_id' => ['sometimes', 'required', 'integer', 'exists:buildings,building_id'],
+            'unit_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'unit_number' => [
                 'sometimes',
                 'required',
                 'string',
                 'max:50',
+                Rule::unique('apartment_units', 'unit_number')
+                    ->where(fn ($query) => $query->where('building_id', $buildingId))
+                    ->ignore($unitId, 'apartment_unit_id'),
             ],
-            'monthly_rent' => [
-                'sometimes',
-                'required',
-                'numeric',
-                'min:0',
-            ],
-            'status' => [
-                'sometimes',
-                'required',
-                'in:Vacant,Occupied,Maintenance',
-            ],
+            'monthly_rent' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'status' => ['sometimes', 'required', 'in:Vacant,Occupied,Maintenance'],
         ];
     }
 
@@ -45,7 +44,11 @@ class UpdateApartmentUnitRequest extends FormRequest
         return [
             'building_id.required' => 'Please select a building.',
             'building_id.exists' => 'The selected building does not exist.',
+            'unit_name.string' => 'Apartment unit name must be a valid string.',
+            'unit_name.max' => 'Apartment unit name must not exceed 255 characters.',
             'unit_number.required' => 'Unit number is required.',
+            'unit_number.max' => 'Unit number must not exceed 50 characters.',
+            'unit_number.unique' => 'This unit number already exists in the selected building.',
             'monthly_rent.required' => 'Monthly rent is required.',
             'monthly_rent.numeric' => 'Monthly rent must be a number.',
             'monthly_rent.min' => 'Monthly rent cannot be negative.',

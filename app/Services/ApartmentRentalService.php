@@ -52,6 +52,7 @@ class ApartmentRentalService
         return DB::transaction(function () use ($data) {
             return ApartmentUnit::create([
                 'building_id' => $data['building_id'],
+                'unit_name' => isset($data['unit_name']) ? $this->cleanText($data['unit_name']) : null,
                 'unit_number' => $this->cleanText($data['unit_number']),
                 'monthly_rent' => $this->money($data['monthly_rent'] ?? 0),
                 'status' => $data['status'],
@@ -67,6 +68,13 @@ class ApartmentRentalService
 
             if (array_key_exists('building_id', $data)) {
                 $payload['building_id'] = $data['building_id'];
+            }
+
+            if (array_key_exists('unit_name', $data)) {
+                $name = $data['unit_name'];
+                $payload['unit_name'] = is_string($name) && trim($name) !== ''
+                    ? $this->cleanText($name)
+                    : null;
             }
 
             if (array_key_exists('unit_number', $data)) {

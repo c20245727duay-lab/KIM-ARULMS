@@ -12,6 +12,7 @@ class ApartmentUnit extends Model
 
     protected $fillable = [
         'building_id',
+        'unit_name',
         'unit_number',
         'monthly_rent',
         'status',

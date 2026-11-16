@@ -15,59 +15,28 @@ class StoreLeaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tenant_id' => [
-                'required',
-                'exists:tenants,tenant_id',
-            ],
-            'apartment_unit_id' => [
-                'required',
-                'exists:apartment_units,apartment_unit_id',
-            ],
-            'monthly_rent' => [
-                'required',
-                'numeric',
-                'min:0',
-            ],
-            'security_deposit' => [
-                'required',
-                'numeric',
-                'min:0',
-            ],
-            'lease_start' => [
-                'required',
-                'date',
-                'after_or_equal:today',
-            ],
-            'lease_end' => [
-                'required',
-                'date',
-                'after_or_equal:today',
-                'after_or_equal:lease_start',
-            ],
-            'utility_charge' => [
-                'required',
-                'numeric',
-                'min:0',
-            ],
-            'payment_status' => [
-                'required',
-                'in:Pending,Paid,Overdue',
-            ],
+            'tenant_id' => ['required', 'exists:tenants,tenant_id'],
+            'apartment_unit_id' => ['required', 'exists:apartment_units,apartment_unit_id'],
+            'monthly_rent' => ['required', 'numeric', 'min:0'],
+            'security_deposit' => ['required', 'numeric', 'min:0'],
+            'lease_start' => ['required', 'date', 'after_or_equal:today'],
+            'lease_end' => ['required', 'date', 'after_or_equal:today', 'after_or_equal:lease_start'],
+            'utility_charge' => ['required', 'numeric', 'min:0'],
+            'payment_status' => ['required', 'in:Pending,Paid,Overdue'],
         ];
     }
 
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            if (! $this->lease_start || ! $this->lease_end) {
+            if ($validator->errors()->has('lease_start') || $validator->errors()->has('lease_end')) {
                 return;
             }
 
-            $start = Carbon::parse($this->lease_start)->startOfDay();
-            $end = Carbon::parse($this->lease_end)->startOfDay();
-            $dayDifference = (int) (($end->getTimestamp() - $start->getTimestamp()) / 86400);
+            $start = Carbon::parse($this->input('lease_start'))->startOfDay();
+            $end = Carbon::parse($this->input('lease_end'))->startOfDay();
 
-            if ($dayDifference < 5) {
+            if ($start->diffInDays($end, false) < 5) {
                 $validator->errors()->add('lease_end', 'Lease end date must be at least 5 days after the start date.');
             }
         });
@@ -86,8 +55,7 @@ class StoreLeaseRequest extends FormRequest
             'security_deposit.required' => 'Security deposit is required.',
             'lease_start.required' => 'Lease start date is required.',
             'lease_start.after_or_equal' => 'Lease start date cannot be in the past.',
-            'lease_end.after_or_equal' => 'Lease end date cannot be in the past.',
-            'lease_end.after_or_equal:lease_start' => 'Lease end date must be on or after the lease start date.',
+            'lease_end.after_or_equal' => 'Lease end date must be on or after the lease start date.',
             'utility_charge.required' => 'Utility charge is required.',
             'payment_status.in' => 'Invalid payment status.',
         ];
