@@ -125,6 +125,51 @@ class DashboardTest extends TestCase
             ->assertJsonValidationErrors('unit_number');
     }
 
+    public function test_apartment_unit_numbers_can_be_updated_without_conflicting_with_the_same_record()
+    {
+        $building = Building::create(['building_block' => 'A']);
+        $unit = ApartmentUnit::create([
+            'building_id' => $building->building_id,
+            'unit_name' => 'North View',
+            'unit_number' => '101',
+            'status' => 'Vacant',
+        ]);
+
+        $this->putJson('/api/apartment-units/' . $unit->apartment_unit_id, [
+            'building_id' => $building->building_id,
+            'unit_name' => 'Updated North View',
+            'unit_number' => '101',
+            'status' => 'Occupied',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.unit_name', 'Updated North View')
+            ->assertJsonPath('data.unit_number', '101');
+    }
+
+    public function test_apartment_unit_status_can_be_updated_with_a_partial_payload()
+    {
+        $building = Building::create(['building_block' => 'A']);
+        $unit = ApartmentUnit::create([
+            'building_id' => $building->building_id,
+            'unit_name' => 'North View',
+            'unit_number' => '101',
+            'status' => 'Vacant',
+        ]);
+
+        $this->putJson('/api/apartment-units/' . $unit->apartment_unit_id, [
+            'status' => 'Occupied',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'Occupied')
+            ->assertJsonPath('data.unit_number', '101');
+
+        $this->assertDatabaseHas('apartment_units', [
+            'apartment_unit_id' => $unit->apartment_unit_id,
+            'status' => 'Occupied',
+            'unit_number' => '101',
+        ]);
+    }
+
     public function test_apartment_units_can_include_a_name_and_number()
     {
         $building = Building::create(['building_block' => 'A']);

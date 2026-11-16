@@ -42,7 +42,9 @@ class ApartmentRentalService
     {
         return DB::transaction(function () use ($data) {
             return Building::create([
-                'building_block' => strtoupper($this->cleanText($data['building_block'])),
+                'building_block' => strtoupper(
+                    $this->cleanText($data['building_block'])
+                ),
             ]);
         });
     }
@@ -52,7 +54,9 @@ class ApartmentRentalService
         return DB::transaction(function () use ($data) {
             return ApartmentUnit::create([
                 'building_id' => $data['building_id'],
-                'unit_name' => isset($data['unit_name']) ? $this->cleanText($data['unit_name']) : null,
+                'unit_name' => isset($data['unit_name'])
+                    ? $this->cleanText($data['unit_name'])
+                    : null,
                 'unit_number' => $this->cleanText($data['unit_number']),
                 'monthly_rent' => $this->money($data['monthly_rent'] ?? 0),
                 'status' => $data['status'],
@@ -64,6 +68,7 @@ class ApartmentRentalService
     {
         return DB::transaction(function () use ($id, $data) {
             $unit = ApartmentUnit::findOrFail($id);
+
             $payload = [];
 
             if (array_key_exists('building_id', $data)) {
@@ -72,17 +77,22 @@ class ApartmentRentalService
 
             if (array_key_exists('unit_name', $data)) {
                 $name = $data['unit_name'];
+
                 $payload['unit_name'] = is_string($name) && trim($name) !== ''
                     ? $this->cleanText($name)
                     : null;
             }
 
             if (array_key_exists('unit_number', $data)) {
-                $payload['unit_number'] = $this->cleanText($data['unit_number']);
+                $payload['unit_number'] = $this->cleanText(
+                    $data['unit_number']
+                );
             }
 
             if (array_key_exists('monthly_rent', $data)) {
-                $payload['monthly_rent'] = $this->money($data['monthly_rent']);
+                $payload['monthly_rent'] = $this->money(
+                    $data['monthly_rent']
+                );
             }
 
             if (array_key_exists('status', $data)) {
@@ -121,8 +131,11 @@ class ApartmentRentalService
             ]);
 
             $utilityCharge = $this->money($data['utility_charge']);
+
             $totalDue = $this->money(
-                $lease->monthly_rent + $utilityCharge + $lease->security_deposit
+                $lease->monthly_rent +
+                $utilityCharge +
+                $lease->security_deposit
             );
 
             UtilityBill::create([
@@ -203,18 +216,33 @@ class ApartmentRentalService
                 ]);
             }
 
-            $bill = $lease->utilityBills()->lockForUpdate()->first();
-            $billFields = ['monthly_rent', 'security_deposit', 'utility_charge', 'payment_status'];
-            $billWasRequested = array_intersect($billFields, array_keys($data)) !== [];
+            $bill = $lease->utilityBills()
+                ->lockForUpdate()
+                ->first();
+
+            $billFields = [
+                'monthly_rent',
+                'security_deposit',
+                'utility_charge',
+                'payment_status',
+            ];
+
+            $billWasRequested = array_intersect(
+                $billFields,
+                array_keys($data)
+            ) !== [];
 
             if ($bill || $billWasRequested) {
                 $utilityCharge = $this->money(
                     $data['utility_charge'] ?? $bill?->utility_charge ?? 0
                 );
+
                 $billChanges = [
                     'utility_charge' => $utilityCharge,
                     'total_due' => $this->money(
-                        $lease->monthly_rent + $utilityCharge + $lease->security_deposit
+                        $lease->monthly_rent +
+                        $utilityCharge +
+                        $lease->security_deposit
                     ),
                 ];
 

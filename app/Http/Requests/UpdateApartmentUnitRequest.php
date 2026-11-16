@@ -15,27 +15,61 @@ class UpdateApartmentUnitRequest extends FormRequest
 
     public function rules(): array
     {
-        $unitId = $this->route('id') ?? $this->route('apartment_unit');
+        // Get the apartment unit being updated
+        $routeUnit = $this->route('apartment_unit');
+
+        $unitId = $routeUnit instanceof ApartmentUnit
+            ? $routeUnit->getKey()
+            : ($routeUnit ?? $this->route('id'));
+
+        // Get the current building ID if not provided
         $buildingId = $this->input('building_id');
 
         if ($buildingId === null && $unitId !== null) {
-            $buildingId = ApartmentUnit::whereKey($unitId)->value('building_id');
+            $buildingId = ApartmentUnit::whereKey($unitId)
+                ->value('building_id');
         }
 
         return [
-            'building_id' => ['sometimes', 'required', 'integer', 'exists:buildings,building_id'],
-            'unit_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'building_id' => [
+                'sometimes',
+                'required',
+                'integer',
+                'exists:buildings,building_id',
+            ],
+
+            'unit_name' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
             'unit_number' => [
                 'sometimes',
                 'required',
                 'string',
                 'max:50',
                 Rule::unique('apartment_units', 'unit_number')
-                    ->where(fn ($query) => $query->where('building_id', $buildingId))
+                    ->where(fn ($query) => $query->where(
+                        'building_id',
+                        $buildingId
+                    ))
                     ->ignore($unitId, 'apartment_unit_id'),
             ],
-            'monthly_rent' => ['sometimes', 'required', 'numeric', 'min:0'],
-            'status' => ['sometimes', 'required', 'in:Vacant,Occupied,Maintenance'],
+
+            'monthly_rent' => [
+                'sometimes',
+                'required',
+                'numeric',
+                'min:0',
+            ],
+
+            'status' => [
+                'sometimes',
+                'required',
+                'in:Vacant,Occupied,Maintenance',
+            ],
         ];
     }
 
@@ -44,14 +78,19 @@ class UpdateApartmentUnitRequest extends FormRequest
         return [
             'building_id.required' => 'Please select a building.',
             'building_id.exists' => 'The selected building does not exist.',
+            'building_id.integer' => 'Please select a valid building.',
+
             'unit_name.string' => 'Apartment unit name must be a valid string.',
             'unit_name.max' => 'Apartment unit name must not exceed 255 characters.',
+
             'unit_number.required' => 'Unit number is required.',
             'unit_number.max' => 'Unit number must not exceed 50 characters.',
             'unit_number.unique' => 'This unit number already exists in the selected building.',
+
             'monthly_rent.required' => 'Monthly rent is required.',
             'monthly_rent.numeric' => 'Monthly rent must be a number.',
             'monthly_rent.min' => 'Monthly rent cannot be negative.',
+
             'status.required' => 'Unit status is required.',
             'status.in' => 'Invalid apartment unit status.',
         ];
