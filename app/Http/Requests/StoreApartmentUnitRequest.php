@@ -12,10 +12,32 @@ class StoreApartmentUnitRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $fields = ['unit_name', 'unit_number'];
+        $cleaned = [];
+
+        foreach ($fields as $field) {
+            $value = $this->input($field);
+
+            if (is_string($value)) {
+                $cleaned[$field] = trim(strip_tags($value));
+            }
+        }
+
+        if (array_key_exists('unit_name', $cleaned) && $cleaned['unit_name'] === '') {
+            $cleaned['unit_name'] = null;
+        }
+
+        if ($cleaned !== []) {
+            $this->merge($cleaned);
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'building_id' => ['required', 'exists:buildings,building_id'],
+            'building_id' => ['required', 'integer', 'exists:buildings,building_id'],
             'unit_name' => ['nullable', 'string', 'max:255'],
             'unit_number' => [
                 'required',
@@ -34,6 +56,7 @@ class StoreApartmentUnitRequest extends FormRequest
         return [
             'building_id.required' => 'Please select a building.',
             'building_id.exists' => 'The selected building does not exist.',
+            'building_id.integer' => 'Please select a valid building.',
             'unit_name.string' => 'Apartment unit name must be a valid string.',
             'unit_name.max' => 'Apartment unit name must not exceed 255 characters.',
             'unit_number.required' => 'Unit number is required.',

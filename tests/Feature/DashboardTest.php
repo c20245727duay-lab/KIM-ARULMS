@@ -194,6 +194,22 @@ class DashboardTest extends TestCase
         ]);
     }
 
+    public function test_apartment_unit_text_is_trimmed_before_validation_and_storage()
+    {
+        $building = Building::create(['building_block' => 'A']);
+
+        $this->postJson('/api/apartment-units', [
+            'building_id' => $building->building_id,
+            'unit_name' => '  Riverside Suite  ',
+            'unit_number' => '  104A  ',
+            'monthly_rent' => 1400,
+            'status' => 'Vacant',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.unit_name', 'Riverside Suite')
+            ->assertJsonPath('data.unit_number', '104A');
+    }
+
     public function test_work_orders_can_be_created_and_updated()
     {
         $building = Building::create(['building_block' => 'A']);
